@@ -1,6 +1,6 @@
 export fh_model, fh_nls_model
 
-function FH_smooth_term()
+function FH_smooth_term(; abstol = 1e-14, reltol = 1e-14)
   # FH model = van-der-Pol oscillator when I = b = c = 0
   # x' = μ(x - x^3/3 - y)
   # y' = x/μ -> here μ = 12.5
@@ -29,13 +29,13 @@ function FH_smooth_term()
   data = noise .+ b
 
   # solve FH with parameters p
-  function simulate(p)
+  function simulate(p, abstol = 1e-14, reltol = 1e-14)
     temp_prob = DifferentialEquations.remake(prob_FH, p = p)
     sol = DifferentialEquations.solve(
       temp_prob,
       DifferentialEquations.Vern9(),
-      abstol = 1e-14,
-      reltol = 1e-14,
+      abstol = abstol,
+      reltol = reltol,
       saveat = savetime,
     )
     # if any((sol.retcode != :Success for s in sol))
@@ -46,15 +46,15 @@ function FH_smooth_term()
   end
 
   # define residual vector
-  function residual(p)
-    F = simulate(p)
+  function residual(p, args...)
+    F = simulate(p, args...)
     F .-= data
     return F
   end
 
   # misfit = ‖residual‖² / 2
-  function misfit(p)
-    F = residual(p)
+  function misfit(p, args...)
+    F = residual(p, args...)
     return dot(F, F) / 2
   end
 
